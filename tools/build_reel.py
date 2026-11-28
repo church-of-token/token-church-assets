@@ -47,6 +47,9 @@ still("s3",2.0); still("s4",2.6); still("s5",3.2,fout=False)
 order=[f"{D}/s1.mp4",*parts,f"{D}/s3.mp4",f"{D}/s4.mp4",f"{D}/s5.mp4"]
 open(f"{D}/list.txt","w").write("".join(f"file '{p}'\n" for p in order))
 subprocess.run(["ffmpeg","-y","-loglevel","error","-f","concat","-safe","0","-i",f"{D}/list.txt","-c","copy",f"{D}/reel_tmp.mp4"],check=True)
-# silent audio track so Instagram accepts it
-subprocess.run(["ffmpeg","-y","-loglevel","error","-i",f"{D}/reel_tmp.mp4","-f","lavfi","-i","anullsrc=r=44100:cl=stereo","-shortest","-c:v","copy","-c:a","aac",f"{D}/reel_01_cheating.mp4"],check=True)
+# BGM: 자작 오르간→비트 드랍 음원 (tools/make_bgm.py). 드랍 시점 = 첫 장면 길이
+TOOLS=os.path.dirname(os.path.abspath(__file__))
+dur=float(subprocess.check_output(["ffprobe","-v","error","-show_entries","format=duration","-of","csv=p=0",f"{D}/reel_tmp.mp4"]).decode())
+subprocess.run(["python3",f"{TOOLS}/make_bgm.py",str(dur),"2.8",f"{D}/bgm.wav"],check=True)
+subprocess.run(["ffmpeg","-y","-loglevel","error","-i",f"{D}/reel_tmp.mp4","-i",f"{D}/bgm.wav","-map","0:v","-map","1:a","-shortest","-c:v","copy","-c:a","aac","-b:a","192k",f"{D}/reel_01_cheating.mp4"],check=True)
 print("ok")
